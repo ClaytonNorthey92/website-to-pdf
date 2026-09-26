@@ -38,7 +38,7 @@ jobs:
           git diff --exit-code || { echo "::error::files are not formatted; run go fmt ./..."; exit 1; }
 
       - name: Test
-        run: docker run --rm --shm-size=1g -v "$PWD":/git -v gomodcache:/go/pkg/mod websitetopdf go test ./...
+        run: docker run --rm --shm-size=1g websitetopdf go test ./...
 
       - name: Build
-        run: docker run --rm -v "$PWD":/git -v gomodcache:/go/pkg/mod websitetopdf go build -o websitetopdf ./cmd/websitetopdf
+        run: docker run --rm websitetopdf go build -o websitetopdf ./cmd/websitetopdf
