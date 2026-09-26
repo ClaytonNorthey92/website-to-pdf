@@ -76,8 +76,10 @@ go build ./cmd/websitetopdf
 
 ## Example: archiving the City of Madison website with Docker
 
-The Dockerfile provides Go and Chromium, so there's nothing else to install. It
-doesn't contain the source code; you mount the project into the container at `/git`.
+The Docker image has everything needed: Go, Chromium, and a copy of the project in
+`/git/websitetopdf`, with its Go modules downloaded when the image is built. Since
+the code is copied in, rebuild the image after changing it. Only the output
+directory needs to be mounted into the container.
 
 From the project root:
 
@@ -89,18 +91,20 @@ docker build -t websitetopdf .
 mkdir -p cityofmadison
 
 # crawl the site
-docker run --rm \
+docker run --rm -it \
   --shm-size=1g \
-  -v "$PWD":/git \
+  -v "$PWD/cityofmadison":/out \
   websitetopdf \
-  go run ./cmd/websitetopdf https://www.cityofmadison.com/ /git/cityofmadison
+  go run ./cmd/websitetopdf https://www.cityofmadison.com/ /out
 ```
 
-`--shm-size=1g` gives Chromium more shared memory than Docker's 64 MB default,
-which it can run out of on large pages.
-
-The PDFs and images end up in `cityofmadison/` on your machine. Press Ctrl+C to
-stop the crawl early; files saved so far are kept.
+- `-v "$PWD/cityofmadison":/out` mounts your output directory at `/out` in the
+  container, so the PDFs and images end up in `cityofmadison/` on your machine.
+  The container runs as root, so on Linux the saved files are owned by root.
+- `-it` lets Ctrl+C reach the crawler, so you can stop it early. Files saved so far
+  are kept.
+- `--shm-size=1g` gives Chromium more shared memory than Docker's 64 MB default,
+  which it can run out of on large pages.
 
 A government site can have thousands of pages. Keep the default delay (or a longer
 one) so you don't overload the server, and check the site's terms of use before
@@ -140,11 +144,16 @@ websites. They compare the saved PDFs byte for byte with the expected PDFs in
 `testdata/`, ignoring the parts that change on every run (timestamps, the Chromium
 version and the test server's port). Those PDFs were made with the Chromium in the
 Dockerfile's image (version 152). A different Chromium version or different fonts
-can change the output, so run the tests in that image:
+can change the output, so run the tests in that image. The image tests the code
+copied in when it was built, so rebuild it first:
 
 ```sh
-docker run --rm -v "$PWD":/git websitetopdf go test ./...
+docker build -t websitetopdf .
+docker run --rm --shm-size=1g websitetopdf go test ./...
 ```
+
+CI runs the same tests on every pull request to `main` and every push to `main`,
+along with a formatting check and a build of the CLI.
 
 ## License
 
