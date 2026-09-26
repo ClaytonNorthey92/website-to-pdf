@@ -37,8 +37,11 @@ jobs:
           docker run --rm -v "$PWD":/git -v gomodcache:/go/pkg/mod websitetopdf go fmt ./...
           git diff --exit-code || { echo "::error::files are not formatted; run go fmt ./..."; exit 1; }
 
+      - name: Mark current directory as safe for building
+        run: git config --global --add safe.directory $PWD
+
       - name: Test
-        run: docker run --rm --shm-size=1g -v "$PWD":/git -v gomodcache:/go/pkg/mod websitetopdf go test -buildvcs=false ./...
+        run: docker run --rm --shm-size=1g -v "$PWD":/git websitetopdf go test ./...
 
       - name: Build
-        run: docker run --rm -v "$PWD":/git -v gomodcache:/go/pkg/mod websitetopdf go build -buildvcs=false -o websitetopdf ./cmd/websitetopdf
+        run: docker run --rm -v "$PWD":/git websitetopdf go build -o websitetopdf ./cmd/websitetopdf
