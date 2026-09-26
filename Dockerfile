@@ -5,3 +5,5 @@ RUN apk add chromium git
 WORKDIR /git/websitetopdf
 
 COPY . .
+
+RUN go mod tidy
