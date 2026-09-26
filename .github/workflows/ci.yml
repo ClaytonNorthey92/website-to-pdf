@@ -1,0 +1,44 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  # Runs for pull requests opened, or updated, by anyone other than ClaytonNorthey92.
+  # It uses the external-pr-approval environment, whose required reviewer is
+  # ClaytonNorthey92, so it waits for ClaytonNorthey92 to approve every run.
+  approval:
+    if: github.event.pull_request.user.login != 'ClaytonNorthey92' || github.actor != 'ClaytonNorthey92'
+    runs-on: ubuntu-latest
+    environment: external-pr-approval
+    steps:
+      - run: echo "Approved to run CI for ${{ github.event.pull_request.user.login }}'s pull request"
+
+  ci:
+    needs: approval
+    # runs once approved, or right away when approval was skipped for ClaytonNorthey92
+    if: ${{ !cancelled() && (needs.approval.result == 'success' || needs.approval.result == 'skipped') }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Build the container
+        run: docker build -t websitetopdf .
+
+      # every step runs in the container, sharing a module cache between steps
+      - name: Check formatting
+        run: |
+          docker run --rm -v "$PWD":/git -v gomodcache:/go/pkg/mod websitetopdf go fmt ./...
+          git diff --exit-code || { echo "::error::files are not formatted; run go fmt ./..."; exit 1; }
+
+      - name: Test
+        run: docker run --rm --shm-size=1g -v "$PWD":/git -v gomodcache:/go/pkg/mod websitetopdf go test ./...
+
+      - name: Build
+        run: docker run --rm -v "$PWD":/git -v gomodcache:/go/pkg/mod websitetopdf go build -o websitetopdf ./cmd/websitetopdf

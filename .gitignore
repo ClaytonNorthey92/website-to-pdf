@@ -1,0 +1,19 @@
+# macOS
+.DS_Store
+
+# editors
+.idea/
+.vscode/
+
+# binaries from `go build ./cmd/websitetopdf` (repo root) or `go build` (in cmd/websitetopdf)
+/websitetopdf
+/cmd/websitetopdf/websitetopdf
+
+# test binaries and coverage profiles
+*.test
+*.out
+
+# crawl output: pages and images from other people's websites
+/cityofmadison/
+
+# PDFs are not ignored: testdata/ holds the expected PDFs the tests compare against
