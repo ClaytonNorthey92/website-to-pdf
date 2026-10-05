@@ -7,3 +7,7 @@ WORKDIR /git/websitetopdf
 COPY . .
 
 RUN go mod tidy
+
+RUN go build -o /bin/websitetopdf ./cmd/websitetopdf
+
+RUN chmod +x /bin/websitetopdf
