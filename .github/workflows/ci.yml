@@ -46,4 +46,4 @@ jobs:
       - name: Docker build
         run: |
           docker build -t websitetopdf:local .
-          docker run -rm websitetopdf:local websitetopdf --help
+          docker run --rm websitetopdf:local websitetopdf --help
